@@ -2,7 +2,7 @@
 /// Pi Fan PWM Controller Service
 ///
 /// @author Andrei Biu - Pislaru
-/// @version 1.0.5
+/// @version 1.0.6
 /// @date Dec 2020
 /// @brief Simple C program targeting Raspberry Pi
 ///     to control the speed of a cooling fan
@@ -15,18 +15,17 @@
 #include <unistd.h>
 #include <wiringPi.h>
 
-
 /// @defgroup General Constants
 /// @warning Do not modify
-
+/// @{
 #define TRUE 1
 #define FALSE 0
 #define INLINED __attribute__((always_inline))
-
+/// @}
 
 /// @defgroup Software & Hardware Constants
 /// @warning Do not modify
-
+/// @{
 #define PWM_PIN 1
 #define CLOCK 1024
 #define RANGE 200
@@ -36,7 +35,7 @@
 #define TEMPERATURES_COUNT_MASK 3
 #define TEMPERATURE_NORM_LOG 10
 #define TEMPERATURE_REAL_DEVICE_PATH "/sys/class/thermal/thermal_zone0/temp"
-
+/// @}
 
 /// @defgroup Control Algorithm Constants
 /// @note This values can be customized with care
@@ -51,7 +50,7 @@
 ///     than or equal to RANGE constant above.
 /// @note A value of 'x' for speed means 'x/2'%
 ///     duty cycle and physical fan speed
-
+/// @{
 #define TARGET_TEMPERATURE 53
 #define TEMPERATURE_HYST_DELTA_UP 3
 #define TEMPERATURE_HYST_DELTA_DOWN 5
@@ -59,10 +58,10 @@
 #define SPEED_CORR_SCALE_FACTOR 5
 #define MIN_SPEED 50
 #define MAX_SPEED 200
-
+/// @}
 
 /// @defgroup Auxiliary Functions
-
+/// @{
 INLINED int getTemperature() {
     char text[6];
     int temperature;
@@ -81,10 +80,10 @@ INLINED int clamp(int value, int min, int max) {
     value = value > max ? max : value;
     return value;
 }
-
+/// @}
 
 /// @defgroup Main
-
+/// @{
 int main() {
     // WiringPi setup
     if (wiringPiSetup() == -1)
@@ -158,3 +157,4 @@ int main() {
 
     return 0;
 }
+/// @}
