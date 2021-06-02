@@ -7,7 +7,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=root
-ExecStart=/usr/bin/fanctl
+ExecStart=/usr/local/bin/fanctl
 
 [Install]
 WantedBy=multi-user.target
