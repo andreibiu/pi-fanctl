@@ -12,9 +12,9 @@ else
 
 CPL          := gcc
 CPL_FLAGS    := -O3 -w -ffreestanding -c
-CONFIG_DEFS  := $(shell ./parse_config.py $(NAME).cfg)
-OVERLAYS_DIR := "/boot/overlays/"
-KERN_DIR     ?= "/lib/modules/$(shell uname -r)/build"
+CONFIG_DEFS  := $(shell python3 ./parse_config.py $(NAME).cfg)
+OVERLAYS_DIR := /boot/overlays/
+KERN_DIR     ?= /lib/modules/$(shell uname -r)/build
 
 all: build install clean
 
