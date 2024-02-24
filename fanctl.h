@@ -21,15 +21,15 @@
 /// @defgroup Customizable Constants
 /// @{
 #ifndef CURVE_TEMPERATURES
-#define CURVE_TEMPERATURES
+#define CURVE_TEMPERATURES 0
 #endif
 
 #ifndef CURVE_TEMPERATURES_HYST
-#define CURVE_TEMPERATURES_HYST
+#define CURVE_TEMPERATURES_HYST 0
 #endif
 
 #ifndef CURVE_FAN_SPEEDS
-#define CURVE_FAN_SPEEDS
+#define CURVE_FAN_SPEEDS 0, 0, 0, 0, 0, 0, 0, 0
 #endif
 
 #ifndef CONTROL_PERIOD_MS

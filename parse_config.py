@@ -19,8 +19,10 @@ class Curve(IntEnum):
     def get_define(self, curve):
         main_noun = 'TEMPERATURE' if self.name[0] == 'T' else 'SPEED'
         key = f'CURVE_{self.name.replace(main_noun, main_noun + "S")}'
-        value = str([point[self] for point in curve])[1:-1]
-        return f'-D{key}="{value}"'
+        values = [point[self] for point in curve]
+        if self is Curve.FAN_SPEED:
+            values = list(reversed(values))
+        return f'-D{key}="{str(values)[1:-1]}"'
 
 if __name__ == "__main__":
     try:
