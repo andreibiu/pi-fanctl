@@ -1,0 +1,25 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,$SOC_NAME";
+
+    fragment@1 {
+        target = <&rp1_pwm1>;
+        __overlay__ {
+                status = "okay";
+        };
+    };
+};
+
+&{/} {
+    fanctl {
+        compatible = "fanctl";
+        pwms = <&rp1_pwm1 3 $PWM_PERIOD $PWM_POLARITY>;
+		time_delay = <$TIME_DELAY>;
+		curve_temperatures = <$TEMPERATURES>;
+        curve_temperatures_hyst = <$TEMPERATURES_HYST>;
+        curve_fan_speeds = <$FAN_SPEEDS>;
+        status = "okay";
+    };
+};

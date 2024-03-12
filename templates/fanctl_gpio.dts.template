@@ -1,0 +1,38 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,$SOC_NAME";
+
+	fragment@1 {
+		target = <&gpio>;
+		__overlay__ {
+			pwm_pins: pwm_pins {
+				brcm,pins = <18>;
+				brcm,function = <2>;
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&pwm>;
+		overlay2: __overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&pwm_pins>;
+			assigned-clock-rates = <100000000>;
+			status = "okay";
+		};
+	};
+};
+
+&{/} {
+    fanctl {
+        compatible = "fanctl";
+        pwms = <&pwm $PWM_CHANNEL $PWM_PERIOD $PWM_POLARITY>;
+		time_delay = <$TIME_DELAY>;
+		curve_temperatures = <$TEMPERATURES>;
+        curve_temperatures_hyst = <$TEMPERATURES_HYST>;
+        curve_fan_speeds = <$FAN_SPEEDS>;
+        status = "okay";
+    };
+};

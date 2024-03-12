@@ -1,6 +1,6 @@
-NAME     := fanctl
-NAME_ALG := $(NAME)_alg
-NAME_MOD := $(NAME)_mod
+NAME      := fanctl
+NAME_ALG  := $(NAME)_alg
+NAME_MOD  := $(NAME)_mod
 
 ifneq ($(KERNELRELEASE),)
 
@@ -10,40 +10,49 @@ $(NAME)-objs := $(NAME_MOD).o $(NAME_ALG).o
 
 else
 
+SRC_DIR      := src
+BUILD_DIR    := build
 CPL          := gcc
 CPL_FLAGS    := -O3 -w -ffreestanding -c
-CONFIG_DEFS  := $(shell python3 ./parse_config.py $(NAME).cfg)
 OVERLAYS_DIR := /boot/overlays/
 KERN_DIR     ?= /lib/modules/$(shell uname -r)/build
 
+.PHONY: all build build_dtb build_alg build_mod install install_dtb install_mod clean
+
 all: build install clean
 
-build: build_alg build_mod build_dtb
+build: build_dtb build_alg build_mod
 
-build_alg: $(NAME_ALG).c
-    ifeq ($(CONFIG_DEFS),)
-	$(error Error durring configuration parsing)
-    else
-	$(CPL) $(CONFIG_DEFS) $(CPL_FLAGS) $<
-	mv $(NAME_ALG).o $(NAME_ALG).o_shipped
-	echo "" > .$(NAME_ALG).o.cmd
-    endif
+install: install_dtb install_mod
 
-build_mod: $(NAME_MOD).c
-	mv $(NAME_ALG).c .$(NAME_ALG).c
-	make -C "$(KERN_DIR)" $(if $(DEBUG),CFLAGS_MODULE=-DDEBUG,) M=$$PWD modules; \
-	mv .$(NAME_ALG).c $(NAME_ALG).c
+build_dtb: $(BUILD_DIR)/$(NAME).dts
+	dtc -@ -I dts -O dtb -o $(BUILD_DIR)/$(NAME).dtbo $<
 
-build_dtb: $(NAME).dts
-	dtc -@ -I dts -O dtb -o $(NAME).dtbo $<
+build_alg: $(SRC_DIR)/$(NAME_ALG).c $(SRC_DIR)/$(NAME).h
+	$(CPL) $(CPL_FLAGS) -c $< -o $(BUILD_DIR)/$(basename $(notdir $<)).o_shipped
+	echo "" > $(BUILD_DIR)/.$(NAME_ALG).o.cmd
 
-install:
-	cp $(NAME).dtbo $(OVERLAYS_DIR)
-	make -C "$(KERN_DIR)" M=$$PWD modules_install
+build_mod: $(BUILD_DIR)/$(NAME_MOD).c $(BUILD_DIR)/$(NAME).h $(BUILD_DIR)/Makefile
+	make -C "$(KERN_DIR)" $(if $(DEBUG),CFLAGS_MODULE=-DDEBUG,) M=$(realpath $(BUILD_DIR)) modules
+
+install_dtb:
+	cp $(BUILD_DIR)/$(NAME).dtbo $(OVERLAYS_DIR)
+
+install_mod:
+	make -C "$(KERN_DIR)" M=$(realpath $(BUILD_DIR)) modules_install
 	depmod -A
 
 clean:
-	make -C "$(KERN_DIR)" M=$$PWD clean
-	rm -f $(NAME_ALG).o_shipped $(NAME).dtbo
+	rm -rf $(BUILD_DIR)
+	mkdir $(BUILD_DIR)
+
+$(BUILD_DIR)/%.c: $(SRC_DIR)/%.c
+	ln -sf $(realpath $<) $@
+
+$(BUILD_DIR)/%.h: $(SRC_DIR)/%.h
+	ln -sf $(realpath $<) $@
+
+$(BUILD_DIR)/%: %
+	ln -sf $(realpath $<) $@
 
 endif
