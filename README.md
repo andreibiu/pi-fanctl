@@ -1,92 +1,142 @@
 # pi-fanctl
 
-Kernel driver for pwm control of cooling fans targeting Raspberry Pi boards.
+Kernel driver for pwm control of cooling fans targeting Raspberry Pi boards with
+64-bit cpu architectures.
 
 This projects aims to offer the necessary software for cooling Raspberry Pis in
-order to enable their full performance potential (especially useful for overclocked
-chips), while allowing enough flexibility regarding the actual setup.
-Features include:
- - up to 8-point fan curves with temperature hysteresis
- - the possibility to use even 2-pin fans with few extra components (a transistor
-   and a flyback diode)
- - efficient implementation using NEON instructions
+order to enable their full performance potential / prevent throttling for
+overclocked chips, while allowing enough flexibility regarding the actual
+setup (fan type and curve).
 
-**Note:** The driver uses the pwm channel *0* and the GPIO pin *18*.
+Features include:
+
+- easy configuration
+- up to 8-point fan curves with temperature hysteresis
+- the possibility to control even 2-pin fans with few extra components
+  (a transistor and a flyback diode)
+- very low resource usage and efficient implementation using inline assembly,
+  bit operations and NEON instructions
 
 ### Dependencies & Compatibility
 
-The project was developed and tested on Raspberry Pi 4 running the latest
-Raspberry Pi OS 64-bit version, but any other 64-bit Linux distribution should
-that has a `python` version `3.8` or newer and the necessary dependencies for
-module and device tree compilation (`gcc`, `make`, `dtc`, kernel headers matching
-the running kernel version) should work as long as it also provides the
-`pwm-overlay` shipped by Raspberry Pi OS.
+The table below contains the supported boards with the tested Linux
+distributions / kernel versions so far:
 
-**Note**: Raspberry Pi 5 comes with official cooling fan support. At the moment
-I don't have any data about how this project would stack up compared to it, but
-I expect that it would be relatively easy to add support for the 5's fan header
-in `pi-fanctl` if it has some advantages over the official cooling software.
+| Board                    | Distribution                                            | Kernels  |
+|:------------------------:| ------------------------------------------------------- | -------- |
+| Raspberry Pi 4           | Raspberry Pi OS (64-bit) based on Debain 12 (bookworm)  | 6.1      |
+| Raspberry Pi 5           | Raspberry Pi OS (64-bit) based on Debain 12 (bookworm)  | 6.1, 6.6 |
 
-### Setup
+However, the project may be compatible with other distributions targeting Pi boards,
+such as Ubuntu, provided that they have installed:
 
-The source code can be obtained from the GitHub release page or alternatively
-by cloning the repository:
+- `git` (optional, only for cloning the repository)
+- `make`
+- `python` (version 3.10 or newer)
+- `dtc`
+- `stress-ng` (optional, only for testing)
+- the usual requirements for kernel modules compilation
+
+**Note**: The project should be also compatible with Raspberry Pi 3 boards, but
+no tests have been made so far.
+
+### Installation
+
+The installation process requires the source code; it can be obtained from the
+GitHub release page or alternatively by cloning the repository:
+
 ```shell
 git clone https://github.com/andreibiu/pi-fanctl
 cd pi-fanctl
 ```
 
-Before installing the kernel driver, it is recommended to test it first on the
-actual system by running the top-level script `fanctl` as follows:
+It is recommended to test the kernel driver on the actual system before
+installing it by running the top-level script `fanctl` as follows:
+
 ```shell
 chmod +x fanctl
 sudo ./fanctl -t
 ```
 
 This ensures that the driver compiles successfully and works as expected by running
-a small stress test using `stress-ng` program (it should be manually installed)
-and by printing some debug info in the kernel logs. This mode is also useful for
+a small stress test using `stress-ng` and by printing some debug info in the
+kernel logs (can be viewed with `dmesg -w`). This mode is also useful for
 customizing the fan curve, as described in the **Configuration** section.
 
-If everything works as expected, the driver can be installed by running:
+If everything works as expected, the driver can be installed just by running:
+
 ```shell
-sudo ./fanctl
+sudo ./fanctl -i
 ```
-and uninstalled with:
+
+All the required steps are done automatically, including device tree blob generation
+and updating the boot configuration.
+
+Uninstalling is just as easy (any changes in system configuration are also reverted):
+
 ```shell
 sudo fanctl -u
 ```
 
-**Note:** The script is designed to add/remove automatically the necessary lines
-in the boot configuration file and reboot the system if the actions above finish.
+**Note:** Those actions will require the system to be restarted.
+**Note:** The uninstall process will also remove the config file created during
+install; make sure to back up its content beforehand
 
 ### Configuration
 
-The driver can be configured at compile-time by editing the `fanctl.cfg` file.
-It contains a list of key-value pairs separated by `=` sign, each on an individual
-line. The configurable values are:
+All driver options are specified in a configuration file named `fanctl.cfg`. It
+contains a list of key-value pairs separated by `=` sign, each on an individual
+line and it is located in the following places:
 
- - the run period: the time between successive runs of the algorithm that checks
-   the temperature and updates the fan speed accordingly:  
-   **P =** *<value_ms>*  
-   this configuration is optional and has a default value of *1000* if it is not
-   provided in the file
- - the fan curve: described by a list of consecutive points starting from *1*,
-   each specifying the temperature, the temperature hysteresis and the corresponding
-   fan speed to be applied:  
-   *<point_id>* **=** *<temp_celsius>* **,** *<temp_hyst_celsius>* **,** *<fan_percentage>*  
-   the corresponding fan speed (*0* to *100*) is applied when the measured
-   temperature is equal or greater that the target one (ranging from *-128*C
-   to *127*C) and changed back only when it decreases under the target minus the
-   hysteresis (ranging from *0*C to *127*C); the fan curve configuration is
-   mandatory and should have between one to eight points
+- `config/fanctl.cfg` in the source directory (sample config also used in testing mode)
+- `/usr/local/etc/fanctl.cfg` after the driver is installed
 
-**Note:** The names between *< >* should be replaced with actual values.  
-**Note:** The `fanctl.cfg` file comes with a sample configuration that can serve
-as a starting point.  
-**Note:** There are some additional constrains on the values of the curve points.
-For example the difference between the temperature of point *N* and *N-1* must
-be strictly greater than the hysteresis of the point *N*. The config parser
-script stops the compilation in such cases to prevent unexpected behavior at run
-time. However, most configurations that make sense in practice should work without
-any problem.
+After installing, the config can be updated with any text editor and then applied
+with:
+
+```shell
+sudo fanctl -c
+```
+
+The configuration options (where italic names in angular brackets should be
+replaced with actual values, bold text is a mandatory part of the syntax) are:
+
+| Key                     | Value format                                             | Value range                                                                               | Description                                                                                                                                |
+|:-----------------------:|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------:| ------------------------------------------------------------------------------------------------------------------------------------------ |
+| __MODE__                | *\<VALUE\>*                                              | VALUE: `gpio` or `fanh`                                                                   | Describes the mode of operation regarding the hardware setup, using either GPIO pins<sup>1</sup> or the board's fan header<sup>2</sup>     |
+| __DELAY__               | *\<VALUE\>*__ms__                                        | -                                                                                         | The delay in milliseconds between two successive calls of the control algorithm                                                            |
+| __PWM_FREQ__            | *\<VALUE\>*__Hz__                                        | -                                                                                         | The frequency in hertz of the pwm control signal                                                                                           |
+| __PWM_POL__             | *\<VALUE\>*                                              | VALUE: `dir` or `inv`                                                                     | The polarity of the pwm signal, inverted mode swaps the voltage values of the two pwm states (on/off)                                      |
+| __POINT\___*\<NUMBER\>* | *\<VALUE_1\>*__C,__*\<VALUE_2\>*__C,__*\<VALUE_3\>*__%__ | NUMBER: 1 to 8 <br> VALUE_1: -128 to 127 <br> VALUE_2: -128 to 127 <br> VALUE_3: 1 to 100 | Describes each fan curve's point in terms of temperature (celsius), temperature hysteresis (celsius), and fan speed percentage<sup>3</sup> |
+
+**NOTE<sup>1</sup>**: In GPIO mode the driver uses for pwm the ***12(GPIO18)***
+pin and default channel active on it:
+- for Pi 4, the ***pwm 0*** of the ***pwm chip 0***
+- for Pi 5, the ***pwm 2*** pf the ***pwm chip 2***
+
+The exact location on the board of the used pin can be found using the `pinout`
+command.  
+**NOTE<sup>2</sup>**: The fan header mode is available only for Pi 5 boards and
+uses the same pwm channel / chip combination as the official driver. In addition,
+the board's device tree is automatically modified in order to disable the
+official driver, but it is restored after uninstall.  
+**NOTE<sup>3</sup>**: There are some additional constrains on the values of the curve points:
+
+ - the fan curve must have at least one point
+ - the fan curve can have less than 8 (maximum) points, but must be continuous
+ - the fan curve should be strictly ascending (in terms of fan speeds and
+   temperatures, including the ones obtained by applying the temperature
+   hysteresis values)
+ - the difference between the temperature and the temperature hysteresis must not
+   be out of temperature range
+
+All those criteria are checked by the script that parses the configuration file, so
+the risk of invalid configurations is minimal.
+
+### Additional commands
+
+All driver script commands can be obtained by typing:
+
+```shell
+sudo fanctl -h
+```
