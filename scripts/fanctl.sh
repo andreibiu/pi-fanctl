@@ -15,13 +15,13 @@ INSTALL_DRIVER_CONFIG_PATH="/usr/local/etc/$DRIVER_NAME.cfg"
 read -r -d '' HELP <<- END
 $(basename $0) [OPTION]
 OPTION:
-    -i | --install      Compiles the kernel module and installs the driver (default action)
+    -i | --install      Compiles the kernel module and installs the driver
     -u | --uninstall    Removes the driver and its additional files
     -c | --configure    Applies the new configuration from 'fanctl.cfg'
     -e | --enable       Enables the driver
     -d | --disable      Disables the driver
     -t | --test         Compiles the kernel module in debug mode and runs a simple test (requires stress-ng to be installed)
-    -h | --help         Prints this help message 
+    -h | --help         Prints this help message (default action)
 END
 
 IS_SOURCE_DIR=$([[ "$(basename $(pwd))" == "pi-fanctl" ]] && echo 1 || echo 0)
@@ -51,16 +51,25 @@ elif [ $1 == "-i" ] || [ $1 == "--install" ]; then
         exit -1
     fi
 
+    mkdir -p ./build
+
     if [ -f "$PI_5_DTB_PATH" ]; then
         dtc -q -I dtb -O dts $PI_5_DTB_PATH -o $PI_5_DTS_PATH
     fi
-    
-    python3 "scripts/${DRIVER_NAME}_config.py" driver_dts board_dts || (exit $?)
-    make build && make install || (EXIT_CODE=$? && make clean && exit $EXIT_CODE)
+
+    python3 "scripts/${DRIVER_NAME}_config.py" driver_dts board_dts && \
+    make build && make install && \
     python3 "scripts/${DRIVER_NAME}_config.py" boot_add
+    if [ $? -ne 0 ]; then
+        EXIT_CODE=$?
+        make clean
+        exit $EXIT_CODE
+    fi
 
     if [ -f "$PI_5_DTB_PATH" ]; then
-        mv $PI_5_DTB_PATH "$PI_5_DTB_PATH.bak"
+        if ! [ -f "$PI_5_DTB_PATH.bak" ]; then 
+            mv $PI_5_DTB_PATH "$PI_5_DTB_PATH.bak"
+        fi
         dtc -q -I dts -O dtb $PI_5_DTS_PATH -o $PI_5_DTB_PATH
     fi
 
@@ -112,6 +121,8 @@ elif [ $1 == "-t" ] || [ $1 == "--test" ]; then
         exit -1
     fi
 
+    mkdir -p ./build
+
     python3 "scripts/${DRIVER_NAME}_config.py" driver_dts && \
     make DEBUG=1 build && make install_dtb
     if [ $? -ne 0 ]; then
@@ -120,7 +131,7 @@ elif [ $1 == "-t" ] || [ $1 == "--test" ]; then
         exit $EXIT_CODE
     fi
 
-    BUILTIN_DRIVER_LOADED=$(lsmod | grep "pwm_fan")
+    BUILTIN_DRIVER_LOADED=$(lsmod | grep $BUILTIN_DRIVER_NAME)
     if ! [ -z "BUILTIN_DRIVER_LOADED" ]; then rmmod $BUILTIN_DRIVER_NAME; fi
     dtoverlay $DRIVER_NAME && insmod "build/$DRIVER_NAME.ko"
 
@@ -129,7 +140,7 @@ elif [ $1 == "-t" ] || [ $1 == "--test" ]; then
     stress-ng --cpu-method fft --aggressive --cpu 16 --timeout 60s
     sleep 60
 
-    rmmod $DRIVER_NAME.ko || dtoverlay -r $DRIVER_NAME
+    rmmod $DRIVER_NAME.ko; dtoverlay -r $DRIVER_NAME
     if ! [ -z "BUILTIN_DRIVER_LOADED" ]; then modprobe $BUILTIN_DRIVER_NAME; fi
 
     make clean
