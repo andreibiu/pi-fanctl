@@ -23,12 +23,13 @@ def handle_error(message: str) -> None:
 # Constants #
 
 POINTS_NUM = 8
+REPLACEMENT_STRING = '####'
 BOARD_INFO_SOURCE_PATH = '/sys/firmware/devicetree/base/compatible'
 BOOT_CONFIG_PATH = '/boot/config.txt'
 DRIVER_NAME = getenv('DRIVER_NAME')
 DRIVER_CONFIG_PATH = getenv('DRIVER_CONFIG_PATH')
 DRIVER_DTS_PATH = getenv('DRIVER_DTS_PATH')
-DRIVER_DTS_TEMPLATE_PATH = f'{getenv("DRIVER_DTS_TEMPLATE_BASE_PATH")}/{DRIVER_NAME}_%%%%.dts.template'
+DRIVER_DTS_TEMPLATE_PATH = f'{getenv("DRIVER_DTS_TEMPLATE_BASE_PATH")}/{DRIVER_NAME}_{REPLACEMENT_STRING}.dts.template'
 DRIVER_DTOVERLAY_LOAD_SETTING = f'dtoverlay={DRIVER_NAME}'
 PI_5_DTS_PATH = getenv('PI_5_DTS_PATH')
 
@@ -47,9 +48,11 @@ class Mode(Enum):
     GPIO_PINS = 'gpio'
     FAN_HEADER = 'fanh'
 
-    @property
-    def driver_dts_template_path(self) -> str:
-        return DRIVER_DTS_TEMPLATE_PATH.replace('%%%%', self.value);
+    def driver_dts_template_path(self, is_rpi_5: bool) -> str:
+        if self == Mode.GPIO_PINS:
+            return DRIVER_DTS_TEMPLATE_PATH.replace(REPLACEMENT_STRING, f'{self.value}_{2 if is_rpi_5 else 1}')
+        else:
+            return DRIVER_DTS_TEMPLATE_PATH.replace(REPLACEMENT_STRING, self.value)
 
 @dataclass
 class Config:
@@ -137,7 +140,7 @@ def should_skip_driver_dts_fragment(line: str, config: Config) -> bool:
     return (tags := findall('#PI\d', line)) and (int(tags[0][3:]) != config.board_id)
 
 def generate_driver_dts_overlay(config: Config) -> None:
-    with open(config.mode.driver_dts_template_path, 'r') as dts_template_file, \
+    with open(config.mode.driver_dts_template_path(config.is_rpi_5), 'r') as dts_template_file, \
          open(DRIVER_DTS_PATH, 'w') as dts_file:
         in_skip_mode = False
         reached_first_lbrace = False

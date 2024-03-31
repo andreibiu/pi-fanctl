@@ -7,7 +7,7 @@
     fragment@1 {
         target = <&rp1_pwm1>;
         __overlay__ {
-                status = "okay";
+            status = "okay";
         };
     };
 };

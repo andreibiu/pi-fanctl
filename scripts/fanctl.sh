@@ -141,7 +141,6 @@ elif [ $1 == "-t" ] || [ $1 == "--test" ]; then
     sleep 60
 
     rmmod $DRIVER_NAME.ko; dtoverlay -r $DRIVER_NAME
-    rm $INSTALL_DRIVER_OVERLAY_PATH
     if ! [ -z "$BUILTIN_DRIVER_LOADED" ]; then modprobe $BUILTIN_DRIVER_NAME; fi
 
     make clean
