@@ -7,6 +7,7 @@ ifneq ($(KERNELRELEASE),)
 obj-m        := $(NAME).o
 $(NAME)-src  := $(NAME_MOD).c
 $(NAME)-objs := $(NAME_MOD).o $(NAME_ALG).o
+ccflags-y    := -O3 $(if $(DEBUG),-DDEBUG,)
 
 else
 
@@ -33,7 +34,7 @@ build_alg: $(SRC_DIR)/$(NAME_ALG).c $(SRC_DIR)/$(NAME).h
 	echo "" > $(BUILD_DIR)/.$(NAME_ALG).o.cmd
 
 build_mod: $(BUILD_DIR)/$(NAME_MOD).c $(BUILD_DIR)/$(NAME).h $(BUILD_DIR)/Makefile
-	make -C "$(KERN_DIR)" $(if $(DEBUG),CFLAGS_MODULE=-DDEBUG,) M=$(realpath $(BUILD_DIR)) modules
+	make -C "$(KERN_DIR)" M=$(realpath $(BUILD_DIR)) modules
 
 install_dtb:
 	cp $(BUILD_DIR)/$(NAME).dtbo $(OVERLAYS_DIR)
