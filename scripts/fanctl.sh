@@ -133,7 +133,7 @@ elif [ $1 == "-t" ] || [ $1 == "--test" ]; then
 
     BUILTIN_DRIVER_LOADED=$(lsmod | grep $BUILTIN_DRIVER_NAME)
     if ! [ -z "$BUILTIN_DRIVER_LOADED" ]; then rmmod $BUILTIN_DRIVER_NAME; fi
-    dtoverlay $DRIVER_NAME
+    dtoverlay $DRIVER_NAME && insmod "build/$DRIVER_NAME.ko"
 
     stress-ng --cpu-method fft --aggressive --cpu 1 --timeout 90s
     sleep 90
