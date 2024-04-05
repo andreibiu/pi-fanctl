@@ -133,6 +133,11 @@ official driver, but it is restored after uninstall.
 All those criteria are checked by the script that parses the configuration file, so
 the risk of invalid configurations is minimal.
 
+**NOTE:** The sample config will not work for every fan setup. For example a
+3/4-header fan that is directly connected to the board's pwm pin most probably
+needs an *inverted* pwm polarity, while setups with external circuits may need
+a *direct* (aka non-inverted) polarity.
+
 ### Additional commands
 
 All driver script commands can be obtained by typing:
