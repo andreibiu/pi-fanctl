@@ -1,5 +1,18 @@
 #!/bin/bash
 
+
+function stop-sleep() {
+    kill -SIGINT $1;
+}
+
+function start-sleep() {
+    sleep $1 &
+    trap "stop-sleep $!" SIGINT
+    wait
+    trap - SIGINT
+}
+
+
 DRIVER_NAME=$(basename $0) && export DRIVER_NAME=${DRIVER_NAME%.*}
 BUILTIN_DRIVER_NAME="pwm_fan"
 
@@ -35,6 +48,7 @@ else
     export DRIVER_DTS_PATH="/tmp/$DRIVER_NAME.dts"
     export DRIVER_DTS_TEMPLATE_BASE_PATH="$INSTALL_DRIVER_EXTRAS_BASE_PATH"
 fi
+
 
 if [ $EUID -ne 0 ]; then
     echo "$(basename $0) requires root privileges."
@@ -136,9 +150,9 @@ elif [ $1 == "-t" ] || [ $1 == "--test" ]; then
     dtoverlay $DRIVER_NAME && insmod "build/$DRIVER_NAME.ko"
 
     stress-ng --cpu-method fft --aggressive --cpu 1 --timeout 90s
-    sleep 90
+    start-sleep 90
     stress-ng --cpu-method fft --aggressive --cpu 16 --timeout 60s
-    sleep 60
+    start-sleep 60
 
     rmmod $DRIVER_NAME.ko; dtoverlay -r $DRIVER_NAME
     if ! [ -z "$BUILTIN_DRIVER_LOADED" ]; then modprobe $BUILTIN_DRIVER_NAME; fi
