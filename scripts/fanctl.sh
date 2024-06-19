@@ -82,6 +82,12 @@ elif [ $1 == "-i" ] || [ $1 == "--install" ]; then
         dtc -q -I dtb -O dts $PI_5_DTB_PATH -o $PI_5_DTS_PATH
     fi
 
+    if ! [ -f $INSTALL_DRIVER_CONFIG_PATH ]; then
+        cp $DRIVER_CONFIG_PATH $INSTALL_DRIVER_CONFIG_PATH
+    else
+        DRIVER_CONFIG_PATH=$INSTALL_DRIVER_CONFIG_PATH
+    fi
+
     python3 "scripts/${DRIVER_NAME}_config.py" driver_dts board_dts && \
     make $PI_KERN_VERSION_COMPILE_DEFINE build && make install && \
     python3 "scripts/${DRIVER_NAME}_config.py" boot_add
@@ -104,7 +110,6 @@ elif [ $1 == "-i" ] || [ $1 == "--install" ]; then
     cp "scripts/$DRIVER_NAME.sh" $INSTALL_DRIVER_BIN_PATH
     cp "scripts/${DRIVER_NAME}_config.py" $INSTALL_DRIVER_EXTRAS_BASE_PATH
     cp templates/* $INSTALL_DRIVER_EXTRAS_BASE_PATH
-    cp $DRIVER_CONFIG_PATH $INSTALL_DRIVER_CONFIG_PATH
 
     echo "The driver is now installed; press enter to reboot the system..."
     read && sleep 5 && reboot now
