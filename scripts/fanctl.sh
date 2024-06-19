@@ -12,12 +12,23 @@ function start-sleep() {
     trap - SIGINT
 }
 
+function get-pi-kernel-version-compile-define() {
+    kernel_info=($(uname -r | tr '.+-' ' '))
+    if [ "${kernel_info[0]}" -ge 6 ] && [ "${kernel_info[1]}" -ge 6 ] && [ "${kernel_info[2]}" -ge 28 ] && \
+            [ "${kernel_info[3]}" == "rpt" ] && [ "${kernel_info[4]}" == "rpi" ]; then
+        echo "KERN_VER_GE_6_6_28_RPI=1"
+    else
+        echo ""
+    fi
+}
+
 
 DRIVER_NAME=$(basename $0) && export DRIVER_NAME=${DRIVER_NAME%.*}
 BUILTIN_DRIVER_NAME="pwm_fan"
 
 PI_5_DT_NAME="bcm2712-rpi-5-b"
 PI_5_DTB_PATH="/boot/firmware/$PI_5_DT_NAME.dtb"
+PI_KERN_VERSION_COMPILE_DEFINE=$(get-pi-kernel-version-compile-define)
 
 INSTALL_DRIVER_EXTRAS_BASE_PATH="/usr/local/share/fanctl"
 INSTALL_DRIVER_BIN_PATH="/usr/local/bin/$DRIVER_NAME"
@@ -72,7 +83,7 @@ elif [ $1 == "-i" ] || [ $1 == "--install" ]; then
     fi
 
     python3 "scripts/${DRIVER_NAME}_config.py" driver_dts board_dts && \
-    make build && make install && \
+    make $PI_KERN_VERSION_COMPILE_DEFINE build && make install && \
     python3 "scripts/${DRIVER_NAME}_config.py" boot_add
     if [ $? -ne 0 ]; then
         EXIT_CODE=$?
@@ -138,7 +149,7 @@ elif [ $1 == "-t" ] || [ $1 == "--test" ]; then
     mkdir -p ./build
 
     python3 "scripts/${DRIVER_NAME}_config.py" driver_dts && \
-    make DEBUG=1 build && make install_dtb
+    make $PI_KERN_VERSION_COMPILE_DEFINE DEBUG=1 build && make install_dtb
     if [ $? -ne 0 ]; then
         EXIT_CODE=$?
         make clean

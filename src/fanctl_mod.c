@@ -66,6 +66,11 @@ static struct timer_list timer;
 #else
 #define PRINT_STATS(TEMP, PREV_DUTY, CRT_DUTY, PERIOD)  // do nothing
 #endif
+
+#ifdef KERN_VER_GE_6_6_28_RPI
+#define pwm_apply_state(pwm_dev_ptr, pwm_state_ptr) \
+    pwm_apply_might_sleep(pwm_dev_ptr, pwm_state_ptr)
+#endif
 /// @}
 
 /// @defgroup Extern Functions

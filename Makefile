@@ -7,7 +7,7 @@ ifneq ($(KERNELRELEASE),)
 obj-m        := $(NAME).o
 $(NAME)-src  := $(NAME_MOD).c
 $(NAME)-objs := $(NAME_MOD).o $(NAME_ALG).o
-ccflags-y    := -O3 $(if $(DEBUG),-DDEBUG,)
+ccflags-y    := -O3 $(if $(DEBUG),-DDEBUG,) $(if $(KERN_VER_GE_6_6_28_RPI),-DKERN_VER_GE_6_6_28_RPI,)
 
 else
 

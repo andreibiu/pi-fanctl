@@ -24,7 +24,7 @@ distributions / kernel versions so far:
 
 | Board                    | Distribution                                            | Kernels  |
 |:------------------------:| ------------------------------------------------------- | -------- |
-| Raspberry Pi 4           | Raspberry Pi OS (64-bit) based on Debain 12 (bookworm)  | 6.1      |
+| Raspberry Pi 4           | Raspberry Pi OS (64-bit) based on Debain 12 (bookworm)  | 6.1, 6.6 |
 | Raspberry Pi 5           | Raspberry Pi OS (64-bit) based on Debain 12 (bookworm)  | 6.1, 6.6 |
 
 However, the project may be compatible with other distributions targeting Pi boards,
