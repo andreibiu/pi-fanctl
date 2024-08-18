@@ -124,7 +124,6 @@ elif [ $1 == "-u" ] || [ $1 == "--uninstall" ]; then
     rm $INSTALL_DRIVER_MODULE_PATH
     rm $INSTALL_DRIVER_BIN_PATH
     rm $INSTALL_DRIVER_OVERLAY_PATH
-    rm $INSTALL_DRIVER_CONFIG_PATH
     rm -rf $INSTALL_DRIVER_EXTRAS_BASE_PATH
     depmod -a
 
