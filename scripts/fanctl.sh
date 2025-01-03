@@ -26,6 +26,13 @@ function get-pi-kernel-version-compile-define() {
 DRIVER_NAME=$(basename $0) && export DRIVER_NAME=${DRIVER_NAME%.*}
 BUILTIN_DRIVER_NAME="pwm_fan"
 
+BOOT_CONFIG_PATH="/boot/firmware/config.txt"
+if [ -f "$BOOT_CONFIG_PATH" ]; then
+    export BOOT_CONFIG_PATH="$BOOT_CONFIG_PATH"
+else
+    export BOOT_CONFIG_PATH="/boot/config.txt"
+fi
+
 PI_5_DT_NAME="bcm2712-rpi-5-b"
 PI_5_DTB_PATH="/boot/firmware/$PI_5_DT_NAME.dtb"
 PI_KERN_VERSION_COMPILE_DEFINE=$(get-pi-kernel-version-compile-define)

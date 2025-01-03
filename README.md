@@ -78,7 +78,7 @@ Uninstalling is just as easy (any changes in system configuration are also rever
 sudo fanctl -u
 ```
 
-**Note:** Those actions will require the system to be restarted.
+**Note:** Those actions will require the system to be restarted.  
 **Note:** The uninstall process will also remove the config file created during
 install; make sure to back up its content beforehand
 

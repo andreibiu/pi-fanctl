@@ -25,7 +25,7 @@ def handle_error(message: str) -> None:
 POINTS_NUM = 8
 REPLACEMENT_STRING = '####'
 BOARD_INFO_SOURCE_PATH = '/sys/firmware/devicetree/base/compatible'
-BOOT_CONFIG_PATH = '/boot/config.txt'
+BOOT_CONFIG_PATH = getenv('BOOT_CONFIG_PATH')
 DRIVER_NAME = getenv('DRIVER_NAME')
 DRIVER_CONFIG_PATH = getenv('DRIVER_CONFIG_PATH')
 DRIVER_DTS_PATH = getenv('DRIVER_DTS_PATH')
